@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Meme Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        canvas { border: 1px solid black; margin-top: 20px; }
+        input, button { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>AI Meme Generator</h1>
+    <input type="text" id="imagePrompt" placeholder="Enter image description"><br>
+    <button id="generateAIImage">Generate AI Image</button><br>
+    <img id="aiImage" src="" alt="AI Generated Image" style="max-width: 100%; display: none;"><br>
+    <input type="text" id="topText" placeholder="Top Text"><br>
+    <input type="text" id="bottomText" placeholder="Bottom Text"><br>
+    <button id="generateMeme">Generate Meme</button>
+    <button id="downloadMeme">Download Meme</button>
+    <canvas id="memeCanvas" width="500" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById('memeCanvas');
+        const ctx = canvas.getContext('2d');
+        const imagePromptInput = document.getElementById('imagePrompt');
+        const topTextInput = document.getElementById('topText');
+        const bottomTextInput = document.getElementById('bottomText');
+        const generateAIImageButton = document.getElementById('generateAIImage');
+        const generateMemeButton = document.getElementById('generateMeme');
+        const downloadMemeButton = document.getElementById('downloadMeme');
+        const aiImageElement = document.getElementById('aiImage');
+        let uploadedImage;
+
+        async function generateAIImage(prompt) {
+            const response = await fetch("https://api.deepai.org/api/text2img", {
+                method: "POST",
+                headers: {
+                    "Api-Key": "e186246f-574b-42b0-8c42-f76298debf8f",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `text=${prompt}`,
+            });
+            const data = await response.json();
+            return data.output_url;
+        }
+
+        generateAIImageButton.addEventListener('click', async () => {
+            const prompt = imagePromptInput.value;
+            if (!prompt) {
+                alert("Please enter a description!");
+                return;
+            }
+            const imageUrl = await generateAIImage(prompt);
+            aiImageElement.src = imageUrl;
+            aiImageElement.style.display = "block";
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                canvas.width = img.width > 500 ? 500 : img.width;
+                canvas.height = img.height > 500 ? 500 : img.height;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                uploadedImage = img;
+            };
+            img.src = imageUrl;
+        });
+
+        generateMemeButton.addEventListener('click', () => {
+            if (!uploadedImage) {
+                alert("Please generate an AI image first!");
+                return;
+            }
+            ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
+            ctx.font = '30px Impact';
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.textAlign = 'center';
+
+            const topText = topTextInput.value.toUpperCase();
+            ctx.fillText(topText, canvas.width / 2, 40);
+            ctx.strokeText(topText, canvas.width / 2, 40);
+
+            const bottomText = bottomTextInput.value.toUpperCase();
+            ctx.fillText(bottomText, canvas.width / 2, canvas.height - 20);
+            ctx.strokeText(bottomText, canvas.width / 2, canvas.height - 20);
+        });
+
+        downloadMemeButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'meme.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
